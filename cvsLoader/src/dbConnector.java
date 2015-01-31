@@ -15,6 +15,8 @@ public class dbConnector {
 	
 	Connection connection;
 	
+	private Logger genLogger = Logger.getLogger("DayLog"); 
+	
 	private int rowSuccess = 0;
 	public int getRowSuccess() {
 		return rowSuccess;
@@ -29,6 +31,9 @@ public class dbConnector {
 	private Logger logger;
 	
 	private void setupLogger(String filename, String dp) {
+		// Ricavo il logger generale
+		//genLogger =  
+		
 		logger = Logger.getLogger("MyLog");  
 	    FileHandler fh;  
 
@@ -81,11 +86,13 @@ public class dbConnector {
 					//+ "Include in your library path!");
 			
 			System.out.println("Problema nel caricamento del driver PostgreSQL JDBC");
+			//genLogger.info("Problema nel caricamento del driver PostgreSQL JDBC");
 			
 			throw new Exception("Problema nel caricamento del driver PostgreSQL JDBC");
 		}
  
 		System.out.println("PostgreSQL JDBC Driver registrato!");
+		genLogger.info("PostgreSQL JDBC Driver registrato!");
  
 		try {
 			connection = DriverManager.getConnection(dbUrl, dbUser, dbPas);
@@ -93,6 +100,7 @@ public class dbConnector {
  
 			//System.out.println("Connection Failed! Check output console");
 			System.out.println("Connessione al db fallita");
+			//genLogger.info("Connessione al db fallita");
 			
 			//return;
 			throw new Exception("Connessione al db fallita");
@@ -101,6 +109,7 @@ public class dbConnector {
 		if (connection != null) {
 			//System.out.println("You made it, take control your database now!");
 			System.out.println("Connessione al db effettuata con successo!");
+			//genLogger.info("Connessione al db effettuata con successo!");
 		}
 		
 		// Setup del logger di entità

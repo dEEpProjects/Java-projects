@@ -1,8 +1,11 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 public class csvParser {
+	// Ricavo il logger generale
+	private Logger logger = Logger.getLogger("DayLog"); 
 	
     public csvParser(String file, QueryInfo info, String dbUrl, String dbUser, String dbPass, String dp) throws Exception {
         
@@ -20,8 +23,9 @@ public class csvParser {
 		} catch (Exception dbe) {
 			throw new Exception();
 		}
-			
+		
     	System.out.println("Inizio processing del file");
+    	logger.info("Inizio processing del file");
     	
         //Delimiter used in CSV file
         final String DELIMITER = ",";
@@ -96,14 +100,17 @@ public class csvParser {
             if(e.getMessage().equals("General query failed")) {
             	resoconto = false;
             	System.out.println("Fallimento della query generale di cancellazione... Esco!");
+            	logger.info("Fallimento della query generale di cancellazione... Esco!");
             }
         } finally {	
         	if(resoconto) {
         		// Stampo resoconto
             	if(db.getRowFailed() == 0) {
             		System.out.println("*****Tutto perfetto [" + db.getRowSuccess() + " record aggiunti]*****");
+            		logger.info("*****Tutto perfetto [" + db.getRowSuccess() + " record aggiunti]*****");
             	} else {
             		System.out.println("*****" + db.getRowFailed() + " record non sono stati aggiunti. Guarda il log!*****");
+            		logger.info("*****" + db.getRowFailed() + " record non sono stati aggiunti.*****");
             	}
         	}
         	

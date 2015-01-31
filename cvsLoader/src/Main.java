@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,6 +36,11 @@ public class Main {
 	private static String dbPass;
 	
 	private static Properties prop;
+	
+	// Supporto logging generale
+	private static Logger logger;
+	private static String oldDate;
+	private static FileHandler vfh;
 	
 	/**
 	 * @param args
@@ -53,16 +61,22 @@ public class Main {
 	        	prop.load(is);
 	        	
 	        	System.out.println("Leggo le preferenze dal file di configurazione");
-	        	
+	        	//logger.info("Leggo le preferenze dal file di configurazione"); 
 	        	// Leggo le preferenze dal file di configurazione
 		        readPreferences(prop);
 		        
+		        // Creo il general logger
+		        System.out.println("Creo il logger giornaliero");
+		        setupGeneralDayLogger();
+		        
 		        System.out.println("Mi metto in watch sulla cartella " + ip);
+		        logger.info("Mi metto in watch sulla cartella " + ip); 
 		        
 		        // Mi metto in watch nella input folder
 		        processEvents();
 	        } else {
 	        	System.out.println("Problema nella lettura del file di preferenze. Controlla che sia presente nella stessa cartella del jar e riavvia il programma!");
+	        	logger.info("Problema nella lettura del file di preferenze. Controlla che sia presente nella stessa cartella del jar e riavvia il programma!");
 	        	System.exit(0);
 	        }
 	        
@@ -71,6 +85,85 @@ public class Main {
 	    }
 
 	}
+	
+	private static void setupGeneralDayLogger() {
+		logger = Logger.getLogger("DayLog");  
+		
+	    try {  
+
+	    	DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			Date date = new Date();
+			
+			oldDate = dateFormat.format(date).toString();
+			
+			String todayDateFile = lp + "/" + dateFormat.format(date);
+		
+			
+			File dir = new File(todayDateFile);
+			
+			if(!dir.exists()) {
+				dir = new File(todayDateFile);
+				dir.mkdir();
+			}
+			
+	        // This block configure the logger with handler and formatter  
+	        vfh = new FileHandler(todayDateFile + "/log.txt", true);
+	        
+	        logger.addHandler(vfh);
+	        
+	        SimpleFormatter formatter = new SimpleFormatter();  
+	        
+	        vfh.setFormatter(formatter); 
+	    } catch (SecurityException e) {  
+	        e.printStackTrace();  
+	    } catch (IOException e) {  
+	        e.printStackTrace();  
+	    }  
+	}
+	
+	// Crea un nuovo logger se è cambiata la data
+	private static void manageLogger() {
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date newDate = new Date();
+		
+		if(!dateFormat.format(newDate).toString().equals(oldDate)) {
+			changeFh(dateFormat.format(newDate).toString());
+		}
+	}
+	
+	// Cambio il file handler del logger giornaliero
+	private static void changeFh(String todayDate) {
+		try {  
+			
+			String todayDateFile = lp + "/" + todayDate;
+		
+			File dir = new File(todayDateFile);
+			
+			if(!dir.exists()) {
+				dir = new File(todayDateFile);
+				dir.mkdir();
+			}
+			
+	        // This block configure the logger with handler and formatter  
+			FileHandler nfh = new FileHandler(todayDateFile + "/log.txt",true);
+	        
+			logger.removeHandler(vfh);
+			
+	        logger.addHandler(nfh);
+	        
+	        SimpleFormatter formatter = new SimpleFormatter();  
+	        
+	        nfh.setFormatter(formatter); 
+	        // passaggio di consegne
+	        vfh = nfh;
+	    } catch (SecurityException e) {  
+	        e.printStackTrace();  
+	    } catch (IOException e) {  
+	        e.printStackTrace();  
+	    } 
+	}
+	
+	
 	
 	private static void moveFile(String filename) {
 					
@@ -87,6 +180,7 @@ public class Main {
 			IOUtils.copyFile(sourceFile, targetFile);
 			
 			System.out.println("Copio " + sourceFile + " in " + targetFile);
+			logger.info("Copio " + sourceFile + " in " + targetFile);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -98,6 +192,7 @@ public class Main {
 		file.delete();
 		
 		System.out.println("Cancello il file " + filename);
+		logger.info("Cancello il file " + filename);
 	}
 	
 	
@@ -106,6 +201,7 @@ public class Main {
 		// Cerco eventuali anomalie
 		if(!validatePreferences(prop)) {
 			System.out.println("Problema nelle cartelle settate, controlla la loro esistenza e riavvia il programma!");
+			logger.info("Problema nelle cartelle settate, controlla la loro esistenza e riavvia il programma!");
 			System.exit(0);
 		}
 		
@@ -155,6 +251,7 @@ public class Main {
 					 info = new QueryInfo(filename, queries);
 				 } catch (Exception e) {
 					 System.out.println("Problema nella estrazione della data! Riavvia il programma!");
+					 logger.info("Problema nella estrazione della data! Riavvia il programma!");
 					 System.exit(0);
 				 }
 				 
@@ -196,6 +293,7 @@ public class Main {
 	            Path filename = ev.context();
 	            
 	            System.out.println(filename + " è stato aggiunto a " + ip);
+	            logger.info(filename + " è stato aggiunto a " + ip);
 	            
 	            //Verifica se il file appena creato è un file di testo.
 	            
@@ -204,6 +302,9 @@ public class Main {
 	            
 	            if(infoToPass != null) {	
 	            	System.out.println(filename + " è un file csv valido");
+	            	logger.info(filename + " è un file csv valido");
+	            	
+	            	manageLogger();
 	            	
 	            	boolean successful = true;
 	            	
@@ -225,10 +326,12 @@ public class Main {
 		            
 	             } else {
 	                System.out.format("Il file '%s' non è un file valido.%n", filename);
+	                logger.info("Il file " + filename + " non è un file valido.%n");
 	             }
 	            
 	            System.out.println("Attendo il prossimo file...");
-	            continue;   
+	            logger.info("Attendo il prossimo file...\n\n");
+	            
 	        }
 	         
 	        //Applichiamo reset a key in modo da poter ricevere un nuovo evento
