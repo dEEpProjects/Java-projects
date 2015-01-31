@@ -4,11 +4,13 @@ import java.io.IOException;
 
 public class csvParser {
 	
-    public csvParser(String file, String query, String dbUrl, String dbUser, String dbPass, String dp) throws Exception {
+    public csvParser(String file, QueryInfo info, String dbUrl, String dbUser, String dbPass, String dp) throws Exception {
         
+    	boolean resoconto = true;
+    	
         BufferedReader fileReader = null;
          
-        String modelQuery = query;
+        String[] modelQueries = info.getQueries();
         
         // Gestione connessione db
         dbConnector db;
@@ -23,46 +25,86 @@ public class csvParser {
     	
         //Delimiter used in CSV file
         final String DELIMITER = ",";
-        try
-        {
+        try {
             String line = "";
             //Create the file reader
             fileReader = new BufferedReader(new FileReader(file));
             
             //System.out.println("Query estratte: ");
+            String[] queries = info.getQueries();
             
-            //Read the file line by line
-            while ((line = fileReader.readLine()) != null)
-            {
-                //Get all tokens available in line
-                String[] tokens = line.split(DELIMITER);
-                
-                // Preparo query
-                query = query.replace("val1", tokens[0]);
-                query = query.replace("val2", tokens[1]);
-                query = query.replace("val3", tokens[2]);
-                query = query.replace("val4", tokens[3]);
-                 
-                // Effettuo query
-                
-                //System.out.println(query);
-                
-                db.insert(query);
-                
-                // Resetto la query modello
-                query = modelQuery;
-                
+            // caso di una sola query
+            if(info.getType() == 1) {
+            	//Read the file line by line
+                while ((line = fileReader.readLine()) != null) {
+                    //Get all tokens available in line
+                    String[] tokens = line.split(DELIMITER);
+
+                    String query;
+                    for(int k = 0; k < queries.length; k++) {
+                    	query = queries[k];
+                    	// sostituisco i valori dinamici
+                    	for(int j = 0; j < tokens.length; j++){
+                    		query = query.replace("val"+(j+1), tokens[j]);
+                    	}
+                    	// sostituisco l'anno
+                    	query = query.replace("year", info.getYear());
+                    	                  
+                    	// generic query
+                        db.executeQuery(query, 2);
+                    }
+                    
+                    // Resetto le queries modello
+                    queries = modelQueries;
+                }
+            } else {// caso di 2 query
+            	String query = queries[0];
+            	
+            	// sostituisco l'anno
+            	query = query.replace("year", info.getYear());
+            	
+            	// Esegui delete query
+            	db.executeQuery(query, 1);
+            	
+            	//Read the file line by line
+                while ((line = fileReader.readLine()) != null) {
+                    //Get all tokens available in line
+                    String[] tokens = line.split(DELIMITER);
+
+                    for(int k = 1; k < queries.length; k++) {
+                    	query = queries[k];
+                    	// sostituisco i valori dinamici
+                    	for(int j = 0; j < tokens.length; j++){
+                    		query = query.replace("val"+(j+1), tokens[j]);
+                    	}
+                    	// sostituisco l'anno
+                    	query = query.replace("year", info.getYear());
+                    	
+                           
+                    	// generic query
+                        db.executeQuery(query, 2);
+                    }
+                    
+                    
+                    // Resetto le queries modello
+                    queries = modelQueries;
+                }
             }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+            
+            
+        } catch (Exception e) {
+            if(e.getMessage().equals("General query failed")) {
+            	resoconto = false;
+            	System.out.println("Fallimento della query generale di cancellazione... Esco!");
+            }
         } finally {	
-        	
-        	// Stampo resoconto
-        	if(db.getRowFailed() == 0) {
-        		System.out.println("*****Tutto perfetto [" + db.getRowSuccess() + " record aggiunti]*****");
-        	} else {
-        		System.out.println("*****" + db.getRowFailed() + " record non sono stati aggiunti. Guarda il log!*****");
+        	if(resoconto) {
+        		// Stampo resoconto
+            	if(db.getRowFailed() == 0) {
+            		System.out.println("*****Tutto perfetto [" + db.getRowSuccess() + " record aggiunti]*****");
+            	} else {
+            		System.out.println("*****" + db.getRowFailed() + " record non sono stati aggiunti. Guarda il log!*****");
+            	}
         	}
         	
         	// Chiudo la connessione col db

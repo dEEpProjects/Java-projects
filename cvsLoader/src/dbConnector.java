@@ -136,7 +136,47 @@ public class dbConnector {
 	    //System.out.println("Records created successfully");
 	      
 	     //System.out.println("Record inserito correttamente");
-}
+	}
+	
+	public void executeQuery(String query, int type) throws Exception {
+	    Statement stmt = null;
+	    
+	    try {
+	    	
+	        connection.setAutoCommit(false);
+	    	
+	    	stmt = connection.createStatement();
+	    	stmt.executeUpdate(query);
+
+	        stmt.close();
+	        
+	        connection.commit();
+	        
+	     } catch (Exception e) {
+	         //System.err.println( e.getClass().getName()+": "+ e.getMessage());
+	         
+	         if(type == 1) {
+	        	 logger.warning(query + " : KO " + "[" + e.getMessage() + "]"); 
+	        	 
+	        	 
+	        	 throw new Exception("General query failed");
+	         } else {
+	        	 logger.warning(query + " : KO " + "[" + e.getMessage() + "]"); 
+		         rowFailed += 1;
+	         }
+	         //return;
+	     }
+	    
+	    // query generale
+	    if(type == 2) {
+	    	rowSuccess += 1;
+	    } 
+	     
+	     logger.info(query + " - OK");
+	    //System.out.println("Records created successfully");
+	      
+	     //System.out.println("Record inserito correttamente");
+	}
 	
 	public void closeConnection() {
 		try {

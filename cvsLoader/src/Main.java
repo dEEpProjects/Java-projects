@@ -11,7 +11,9 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,16 +28,11 @@ public class Main {
 	private static String dp;
 	private static String lp;
 	
-	private static String regex1;
-	private static String regex2;
-	private static String regex3;
-	private static String regex4;
-	private static String regex5;
-	
-	private static String queryString;
 	private static String dbUrl;
 	private static String dbUser;
 	private static String dbPass;
+	
+	private static Properties prop;
 	
 	/**
 	 * @param args
@@ -43,7 +40,7 @@ public class Main {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
-		Properties prop = new Properties();
+		prop = new Properties();
 	    try {
 
 	        File jarPath = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().getPath());
@@ -116,17 +113,7 @@ public class Main {
 		ip = prop.getProperty("sourcePath");
 		dp = prop.getProperty("destinationPath");
 		lp = prop.getProperty("logPath");
-		
-		// Regexs
-		regex1 = prop.getProperty("regex1");
-		regex2 = prop.getProperty("regex2");
-		regex3 = prop.getProperty("regex3");
-		regex4 = prop.getProperty("regex4");
-		regex5 = prop.getProperty("regex5");
-		
-		// Db
-		queryString = prop.getProperty("queryString");
-		
+				
 		dbUrl = prop.getProperty("dbUrl");
 		dbUser = prop.getProperty("dbUser");
 		dbPass = prop.getProperty("dbPass");
@@ -153,6 +140,30 @@ public class Main {
 		}
 		
 		return true;
+	}
+	private static QueryInfo checkFilename(String filename) {
+		QueryInfo info = null;
+		
+		for (Enumeration<?> en = prop.propertyNames(); en.hasMoreElements();) {
+			 String key = (String) en.nextElement();
+			 // se è una regex del nome
+			 if(filename.matches(prop.getProperty(key))) {
+				 
+				 String[] queries = prop.getProperty("queries" + key.substring(5)).split("&");
+				 
+				 try {
+					 info = new QueryInfo(filename, queries);
+				 } catch (Exception e) {
+					 System.out.println("Problema nella estrazione della data! Riavvia il programma!");
+					 System.exit(0);
+				 }
+				 
+				 return info;
+				
+			 }			 
+		 }
+		
+		return null;
 	}
 	
 	public static void processEvents() throws IOException {
@@ -188,14 +199,16 @@ public class Main {
 	            
 	            //Verifica se il file appena creato è un file di testo.
 	            
-	            if(filename.toString().matches(regex1) || filename.toString().matches(regex2) || filename.toString().matches(regex3) || filename.toString().matches(regex4) || filename.toString().matches(regex5)) {	
+	            
+	            QueryInfo infoToPass = checkFilename(filename.toString());
+	            
+	            if(infoToPass != null) {	
 	            	System.out.println(filename + " è un file csv valido");
-	            	
 	            	
 	            	boolean successful = true;
 	            	
 	            	try {
-						csvParser parser = new csvParser(ip + "/" + filename.toString(), queryString, dbUrl, dbUser, dbPass, dp);
+						csvParser parser = new csvParser(ip + "/" + filename.toString(), infoToPass, dbUrl, dbUser, dbPass, dp);
 					} catch (Exception pe) {
 						// TODO Auto-generated catch block
 						//e.printStackTrace();
