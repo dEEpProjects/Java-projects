@@ -114,6 +114,9 @@ public class Main {
 	        SimpleFormatter formatter = new SimpleFormatter();  
 	        
 	        vfh.setFormatter(formatter); 
+	        
+	        // For disable console output
+	        logger.setUseParentHandlers(false);
 	    } catch (SecurityException e) {  
 	        e.printStackTrace();  
 	    } catch (IOException e) {  
