@@ -152,14 +152,14 @@ public class dbConnector {
 	    
 	    try {
 	    	
-	        connection.setAutoCommit(false);
+	        connection.setAutoCommit(true);
 	    	
 	    	stmt = connection.createStatement();
 	    	stmt.executeUpdate(query);
 
 	        stmt.close();
 	        
-	        connection.commit();
+	        //connection.commit();
 	        
 	     } catch (Exception e) {
 	         //System.err.println( e.getClass().getName()+": "+ e.getMessage());
@@ -181,7 +181,7 @@ public class dbConnector {
 	    	rowSuccess += 1;
 	    } 
 	     
-	     logger.info(query + " - OK");
+	     //logger.info(query + " - OK");
 	    //System.out.println("Records created successfully");
 	      
 	     //System.out.println("Record inserito correttamente");
