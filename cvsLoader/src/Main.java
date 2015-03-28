@@ -244,25 +244,29 @@ public class Main {
 		QueryInfo info = null;
 		
 		for (Enumeration<?> en = prop.propertyNames(); en.hasMoreElements();) {
+			
 			 String key = (String) en.nextElement();
-			 // se è una regex del nome
-			 if(filename.matches(prop.getProperty(key))) {
-				 
-				 String[] queries = prop.getProperty("queries" + key.substring(5)).split("&");
-				 
-				 try {
-					 info = new QueryInfo(filename, queries);
-				 } catch (Exception e) {
-					 System.out.println("Problema nella estrazione della data! Riavvia il programma!");
-					 logger.info("Problema nella estrazione della data! Riavvia il programma!");
-					 System.exit(0);
+			 // bisogna escludere le altre chiavi!!!
+			 if(key.startsWith("regex")) {
+				 // se è una regex del nome
+					if(filename.matches(prop.getProperty(key))) {
+						 
+						 String[] queries = prop.getProperty("queries" + key.substring(5)).split("&");
+						 
+						 try {
+							 info = new QueryInfo(filename, queries);
+						 } catch (Exception e) {
+							 System.out.println("Problema nella estrazione della data! Riavvia il programma!");
+							 logger.info("Problema nella estrazione della data! Riavvia il programma!");
+							 System.exit(0);
+						 }
+						 
+						 return info;
+						
+					 }			 
 				 }
-				 
-				 return info;
-				
-			 }			 
-		 }
-		
+		}
+			
 		return null;
 	}
 	
